@@ -1,34 +1,26 @@
 package main
 
-import (
-	"fmt"
-	"math"
-)
+import "fmt"
 
 type Vertex struct {
 	X, Y float64
 }
 
-type MyFloat float64
-
 func (v Vertex) Abs() float64 {
-	return math.Sqrt(v.X*v.X + v.Y*v.Y)
+	return v.X*v.X + v.Y*v.Y
 }
-func (f MyFloat) Abs() float64 {
-	if f < 0 {
-		return float64(-f)
-	}
-	return float64(f)
+
+// q: * つけるとmutableになるという理解でいいのかな
+// a: そうですね。ポインタを使うと、呼び出し元の値を更新できます。
+// q: & をつける例はありますか？
+// a: あまりないですね。ポインタを使うときは、呼び出し元の値を更新したいときに使います。
+func (v *Vertex) Scale(f float64) {
+	v.X = v.X * f
+	v.Y = v.Y * f
 }
 
 func main() {
-	v := Vertex{X: 3, Y: 4}
+	v := Vertex{3, 4}
+	v.Scale(10)
 	fmt.Println(v.Abs())
-
-	f := MyFloat(3.0)
-	fmt.Println(f.Abs())
-
-	f2 MyFloat := -3.0
-	fmt.Println(f2)
-
 }
