@@ -4,8 +4,12 @@ services:
     build:
       context: .
     ports:
-      - 8080:80
+      - 18080:80
     volumes:
       - ../:/go/src/app
+      - gobin:/go/bin
     tty: true
     restart: always
+
+volumes:
+  gobin:
