@@ -2,21 +2,18 @@ package main
 
 import "fmt"
 
-func do(i interface{}) {
-	switch t := i.(type) {
-	case int:
-		fmt.Printf("Twice %v is %v\n", t, t*2)
-	case string:
-		fmt.Printf("%q is %v bytes long\n", t, len(t))
-	default:
-		fmt.Printf("I don't know about type %T!\n", t)
-	}
+type Person struct {
+	Name string
+	Age  int
+}
+
+// Stringer is an interface type that describes objects that can describe themselves as strings.
+func (p Person) String() string {
+	return fmt.Sprintf("%v (%v years)", p.Name, p.Age)
 }
 
 func main() {
-	do(21)
-	do("hello")
-	do(true)
-	var i interface{} = nil
-	do(i)
+	a := Person{"ABC", 42}
+	b := Person{"DEF", 9001}
+	fmt.Println(a, b)
 }
