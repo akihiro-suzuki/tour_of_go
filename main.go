@@ -16,4 +16,16 @@ func main() {
 	a = &v
 
 	fmt.Println(a.Abs())
+	describe(a)
+}
+
+func describe(a Abser) {
+	// %T はtype
+	// %v はvalue
+	writtenBytes, err := fmt.Printf("(%v, %T)\n", a, a)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(writtenBytes)
+	}
 }
