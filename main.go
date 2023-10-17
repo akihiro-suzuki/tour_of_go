@@ -2,24 +2,20 @@ package main
 
 import (
 	"fmt"
-	"math"
+	"io"
+	"strings"
 )
 
-type ErrNegativeSqrt float64
-
-func (ns ErrNegativeSqrt) Error() string {
-	f := float64(ns)
-	return fmt.Sprintf("cannot Sqrt negative number: %v", f)
-}
-
-func Sqrt(x float64) (float64, error) {
-	if x >= 0 {
-		return math.Sqrt(x), nil
-	} else {
-		return 0, ErrNegativeSqrt(x)
-	}
-}
 func main() {
-	fmt.Println(Sqrt(2))
-	fmt.Println(Sqrt(-2))
+	reader := strings.NewReader("Clear is better than clever.")
+	buffer := make([]byte, 8)
+	for {
+		n, err := reader.Read(buffer)
+		fmt.Printf("n = %v err = %v b = %v\n", n, err, buffer)
+		// %q は Go の構文で安全にエスケープされた単一引用符で囲まれた文字リテラルを意味します
+		fmt.Printf("buffer[:n] = %q\n", buffer[:n])
+		if err == io.EOF {
+			break
+		}
+	}
 }
