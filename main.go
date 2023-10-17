@@ -16,8 +16,6 @@ func Sqrt(x float64) (float64, error) {
 	if x >= 0 {
 		return math.Sqrt(x), nil
 	} else {
-		// q: why this is invalid operation?
-		// a: because ErrNegativeSqrt is not a pointer
 		return 0, ErrNegativeSqrt(x)
 	}
 }

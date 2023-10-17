@@ -9,7 +9,6 @@ services:
       - ../:/go/src/app
       - gobin:/go/bin
     tty: true
-    restart: always
 
 volumes:
   gobin:
