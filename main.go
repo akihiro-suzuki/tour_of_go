@@ -2,61 +2,100 @@ package main
 
 import (
 	"fmt"
-	"tourofgo/tree"
+	"sync"
 )
 
-type Stack struct {
-	elements []*tree.Tree
+type Fetcher interface {
+	// Fetch returns the body of URL and
+	// a slice of URLs found on that page.
+	Fetch(url string) (body string, urls []string, err error)
 }
 
-func (s *Stack) Push(t *tree.Tree) {
-	s.elements = append(s.elements, t)
-}
-func (s *Stack) Pop() *tree.Tree {
-	s_len := len(s.elements)
-	if s_len == 0 {
-		return nil
+var mutex = &sync.Mutex{}
+
+// Crawl uses fetcher to recursively crawl
+// pages starting with url, to a maximum of depth.
+func Crawl(url string, depth int, fetcher Fetcher, history map[string]struct{}, ch chan string) {
+	// TODO: Fetch URLs in parallel.
+	// TODO: Don't fetch the same URL twice.
+	// This implementation doesn't do either:
+	if depth <= 0 {
+		return
 	}
-	last := s.elements[s_len-1]
-	s.elements = s.elements[:s_len-1]
-	return last
-}
+	if _, ok := history[url]; ok {
+		return
+	}
+	body, urls, err := fetcher.Fetch(url)
 
-func (s *Stack) Empty() bool {
-	return len(s.elements) == 0
-}
-
-// Walk walks the tree t sending all values
-// from the tree to the channel ch.
-func Walk(t *tree.Tree, ch chan int) {
-	stack := Stack{elements: make([]*tree.Tree, 0)}
-	stack.Push(t)
-	for {
-		ele := stack.Pop()
-		if ele == nil {
-			break
-		}
-		ch <- ele.Value
-		if ele.Left != nil {
-			stack.Push(ele.Left)
-		}
-		if ele.Right != nil {
-			stack.Push(ele.Right)
-		}
+	mutex.Lock()
+	history[url] = struct{}{}
+	mutex.Unlock()
+	if err != nil {
+		ch <- err.Error()
+		return
+	}
+	ch <- fmt.Sprintf("found: %s %q\n", url, body)
+	for _, u := range urls {
+		go Crawl(u, depth-1, fetcher, history, ch)
 	}
 }
-
-// Same determines whether the trees
-// t1 and t2 contain the same values.
-func Same(t1, t2 *tree.Tree) bool
 
 func main() {
-	ch := make(chan int)
-	// q: how to await in go?
-	// a: use channel
-	go Walk(tree.New(1), ch)
+	ch := map[string]struct{}{}
+	channel := make(chan string)
+	go Crawl("https://golang.org/", 4, fetcher, ch, channel)
 
-	for i := 0; i < 10; i++ {
-		fmt.Println(<-ch)
+	// print the value sent by the channel
+	for i := range channel {
+		fmt.Println(i)
 	}
+}
+
+// fakeFetcher is Fetcher that returns canned results.
+type fakeFetcher map[string]*fakeResult
+
+type fakeResult struct {
+	body string
+	urls []string
+}
+
+func (f fakeFetcher) Fetch(url string) (string, []string, error) {
+	if res, ok := f[url]; ok {
+		return res.body, res.urls, nil
+	}
+	return "", nil, fmt.Errorf("not found: %s", url)
+}
+
+// fetcher is a populated fakeFetcher.
+var fetcher = fakeFetcher{
+	"https://golang.org/": &fakeResult{
+		"The Go Programming Language",
+		[]string{
+			"https://golang.org/pkg/",
+			"https://golang.org/cmd/",
+		},
+	},
+	"https://golang.org/pkg/": &fakeResult{
+		"Packages",
+		[]string{
+			"https://golang.org/",
+			"https://golang.org/cmd/",
+			"https://golang.org/pkg/fmt/",
+			"https://golang.org/pkg/os/",
+		},
+	},
+	"https://golang.org/pkg/fmt/": &fakeResult{
+		"Package fmt",
+		[]string{
+			"https://golang.org/",
+			"https://golang.org/pkg/",
+		},
+	},
+	"https://golang.org/pkg/os/": &fakeResult{
+		"Package os",
+		[]string{
+			"https://golang.org/",
+			"https://golang.org/pkg/",
+		},
+	},
 }
